@@ -4,7 +4,6 @@
 -- Agregado de sesiones para el equipo de Producto.
 -- Grano: una fila por (user_id, session_id).
 -- Usa por nombre las columnas *_count que genera int_events__pivoted_by_session.
--- Día 3: la clave sustituta pasa a generarse con dbt_utils.
 -- =============================================================================
 
 with sessions as (
@@ -17,7 +16,7 @@ users as (
 
 final as (
     select
-          {{ dbt_utils.generate_surrogate_key(['s.user_id', 's.session_id']) }} as user_session_id
+          md5(s.user_id || '-' || s.session_id) as user_session_id
         , s.session_id
         , s.user_id
         , u.country                                 as user_country
