@@ -87,7 +87,7 @@ seeds:
   curso_data_engineering:
     #+database: "{{ env_var('DBT_SILVER_DB') }}"
     +database: DEV_SILVER_DB
-    +schema: seeds
+    #+schema: seeds
     country_codes:
       # Tipos explícitos para que dbt no los infiera del CSV
       +column_types:
