@@ -1,10 +1,8 @@
 -- =============================================================================
--- dim_addresses
+-- dim_users_v1
 -- =============================================================================
--- Dimensión de direcciones, enriquecida con el seed country_codes para
--- obtener el código ISO y el continente.
--- El cruce es por nombre de país: si Bronze trae un nombre que no está en el
--- seed (o escrito distinto), country_code y continent quedan a nulo.
+-- Dimensión de usuarios, enriquecida con su dirección por defecto.
+-- Versión 1 (deprecada: ver deprecation_date en _core__models.yml).
 -- =============================================================================
 
 with users as (
@@ -17,17 +15,28 @@ addresses as (
 
 final as (
     select
-          u.*
+          u.user_id
+        , u.first_name
+        , u.last_name
+        , concat(u.first_name, ' ', u.last_name)            as full_name
+        , u.email
+        , coalesce(
+              regexp_like(u.email, '^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$'),
+              false
+          )                                                 as is_valid_email_address
+        , u.phone_number
+        , u.address_id
         , a.address_line
-        , a.zipcode
+        , a.zipcode::varchar(20)                            as zipcode
         , a.state
         , a.country
-        , a.country_code
         , a.continent
-        , a.date_load as address_date_load
-    from users as u
-    left join addresses as a
-        on u.address_id = a.address_id
+        , u.created_at_utc                                  as registered_at_utc
+        , u.updated_at_utc                                  as last_updated_at_utc
+        , datediff('day', u.created_at_utc, current_timestamp()) as days_since_registration
+        , u.date_load
+    from users u
+    left join addresses a on u.address_id = a.address_id
 )
 
 select * from final
