@@ -21,3 +21,6 @@ models:
               arguments:
                 min_value: 0
                 inclusive: true
+          - positive_values:
+                  arguments:
+                    value: 0
