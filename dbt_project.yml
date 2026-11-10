@@ -44,6 +44,7 @@ models:
     # --- Staging: casting y renaming, 1:1 con Bronze. Vistas: no ocupan
     #     almacenamiento y siempre reflejan Bronze.
     staging:
+      +tags: ['staging']
       +materialized: view
       #+database: "{{ env_var('DBT_SILVER_DB') }}"
       +database: DEV_SILVER_DB
@@ -55,6 +56,7 @@ models:
     # --- Silver: limpieza y deduplicación. Tablas: la deduplicación es cara y
     #     no queremos repetirla en cada consulta.
     silver:
+      +tags: ['silver']
       +materialized: table
       #+database: "{{ env_var('DBT_SILVER_DB') }}"
       +database: DEV_SILVER_DB
@@ -66,6 +68,7 @@ models:
     # --- Gold: consumo. La capa la marca la database; el tipo de tabla, el
     #     prefijo del modelo (dim_, fct_, agg_, int_).
     gold:
+      +tags: ['gold']
       +materialized: table
       #+database: "{{ env_var('DBT_GOLD_DB') }}"
       +database: DEV_GOLD_DB
@@ -73,14 +76,17 @@ models:
         +materialized: view
         +schema: intermediate
       core:
+        +tags: ['core']
         +schema: core
         +meta:
           owner: equipo-datos-core
       marketing:
+        +tags: ['marketing']
         +schema: marketing
         +meta:
           owner: equipo-marketing-analytics
       product:
+        +tags: ['product']
         +schema: product
         +meta:
           owner: equipo-producto
