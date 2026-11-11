@@ -1,21 +1,12 @@
 -- =============================================================================
--- Test singular: ningún pedido puede entregarse antes de haberse creado.
+-- Test singular: todo pedido debe tener al menos una línea de pedido.
 -- =============================================================================
--- Un test singular es una SELECT que devuelve las filas que INCUMPLEN la regla.
--- Umbrales: con 1 a 10 filas da WARN; con más de 10, ERROR.
+-- Devuelve los pedidos de fct_orders que no aparecen en fct_order_items.
 -- =============================================================================
-{{
-    config(
-        severity='error',
-        warn_if='>0',
-        error_if='>10'
-    )
-}}
 
-select orders.order_id
-from {{ ref('fct_orders') }} as orders
-left join {{ ref('fct_order_items') }} as order_items
-    on orders.order_id = order_items.order_id
-where order_items.order_id is null
-
-
+select
+      o.order_id
+    , o.order_created_at_utc
+from {{ ref('fct_orders') }} o
+left join {{ ref('fct_order_items') }} oi on o.order_id = oi.order_id
+where oi.order_id is null
