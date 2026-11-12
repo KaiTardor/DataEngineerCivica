@@ -13,8 +13,8 @@ sources:
     description: >
       Base de datos transaccional del e-commerce (SQL Server), replicada a
       Snowflake con Fivetran.
-    #database: "{{ env_var('DBT_BRONZE_DB') }}"
-    database: DEV_BRONZE_DB
+    database: "{{ env_var('DBT_BRONZE_DB') }}"
+    #database: DEV_BRONZE_DB
     schema: sql_server_dbo
 
     # Freshness: `dbt source freshness` compara max(loaded_at_field) con la
@@ -23,9 +23,10 @@ sources:
     # La config se hereda en todas las tablas salvo que una la redefina.
     config:
       loaded_at_field: _loaded_at
-      freshness:
-        warn_after: {count: 24, period: hour}
-        error_after: {count: 48, period: hour}
+      freshness: null 
+      # freshness:
+      #   warn_after: {count: 24, period: hour}
+      #   error_after: {count: 48, period: hour}
 
     tables:
       - name: users
