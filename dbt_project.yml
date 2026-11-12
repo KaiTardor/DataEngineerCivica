@@ -65,27 +65,40 @@ models:
       google_sheets:
         +schema: google_sheets
 
-    # --- Gold: consumo. La capa la marca la database; el tipo de tabla, el
-    #     prefijo del modelo (dim_, fct_, agg_, int_).
     gold:
       +tags: ['gold']
       +materialized: table
       +database: "{{ env_var('DBT_GOLD_DB') }}"
       #+database: DEV_GOLD_DB
       intermediate:
+        +access: private
+        +group: core
         +materialized: view
         +schema: intermediate
+
+        int_orders__enriched:
+          +group: core
+
+        int_events__pivoted_by_session:
+          +group: product
+
       core:
+        +group: core
+        +access: public
         +tags: ['core']
         +schema: core
         +meta:
           owner: equipo-datos-core
       marketing:
+        +group: marketing
+        +access: public
         +tags: ['marketing']
         +schema: marketing
         +meta:
           owner: equipo-marketing-analytics
       product:
+        +group: product
+        +access: public
         +tags: ['product']
         +schema: product
         +meta:
