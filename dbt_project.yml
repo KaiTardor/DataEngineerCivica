@@ -44,6 +44,7 @@ models:
     # --- Staging: casting y renaming, 1:1 con Bronze. Vistas: no ocupan
     #     almacenamiento y siempre reflejan Bronze.
     staging:
+      +tags: ['staging']
       +materialized: view
       #+database: "{{ env_var('DBT_SILVER_DB') }}"
       +database: DEV_SILVER_DB
@@ -55,6 +56,7 @@ models:
     # --- Silver: limpieza y deduplicación. Tablas: la deduplicación es cara y
     #     no queremos repetirla en cada consulta.
     silver:
+      +tags: ['silver']
       +materialized: table
       #+database: "{{ env_var('DBT_SILVER_DB') }}"
       +database: DEV_SILVER_DB
@@ -66,6 +68,7 @@ models:
     # --- Gold: consumo. La capa la marca la database; el tipo de tabla, el
     #     prefijo del modelo (dim_, fct_, agg_, int_).
     gold:
+      +tags: ['gold']
       +materialized: table
       #+database: "{{ env_var('DBT_GOLD_DB') }}"
       +database: DEV_GOLD_DB
@@ -73,11 +76,20 @@ models:
         +materialized: view
         +schema: intermediate
       core:
+        +tags: ['core']
         +schema: core
+        +meta:
+          owner: equipo-datos-core
       marketing:
+        +tags: ['marketing']
         +schema: marketing
+        +meta:
+          owner: equipo-marketing-analytics
       product:
+        +tags: ['product']
         +schema: product
+        +meta:
+          owner: equipo-producto
 
 # =============================================================================
 # Seeds
@@ -87,10 +99,29 @@ seeds:
   curso_data_engineering:
     #+database: "{{ env_var('DBT_SILVER_DB') }}"
     +database: DEV_SILVER_DB
-    #+schema: seeds
+    +schema: seeds
     country_codes:
       # Tipos explícitos para que dbt no los infiera del CSV
       +column_types:
         country_code: varchar(2)
         country_name: varchar(100)
         continent: varchar(50)
+
+# =============================================================================
+# Snapshots (día 5)
+# =============================================================================
+# Historial SCD2 en Silver. Nunca transient: un snapshot es la única copia de
+# la historia y no se puede reconstruir desde Bronze.
+snapshots:
+  curso_data_engineering:
+    #+database: "{{ env_var('DBT_SILVER_DB') }}"
+    +database: DEV_SILVER_DB 
+    +schema: snapshots
+    +transient: false
+
+vars:
+  low_stock_threshold: 10
+  budget_start_date: '2024-01-01'
+
+on-run-end: 
+  - "{{ log_run_summary(results) }}"
