@@ -44,9 +44,10 @@ models:
     # --- Staging: casting y renaming, 1:1 con Bronze. Vistas: no ocupan
     #     almacenamiento y siempre reflejan Bronze.
     staging:
+      +tags: ['staging']
       +materialized: view
-      #+database: "{{ env_var('DBT_SILVER_DB') }}"
-      +database: DEV_SILVER_DB
+      +database: "{{ env_var('DBT_SILVER_DB') }}"
+      #+database: DEV_SILVER_DB
       sql_server_dbo:
         +schema: sql_server_dbo
       google_sheets:
@@ -55,29 +56,59 @@ models:
     # --- Silver: limpieza y deduplicación. Tablas: la deduplicación es cara y
     #     no queremos repetirla en cada consulta.
     silver:
+      +tags: ['silver']
       +materialized: table
-      #+database: "{{ env_var('DBT_SILVER_DB') }}"
-      +database: DEV_SILVER_DB
+      +database: "{{ env_var('DBT_SILVER_DB') }}"
+      #+database: DEV_SILVER_DB
       sql_server_dbo:
         +schema: sql_server_dbo
       google_sheets:
         +schema: google_sheets
 
-    # --- Gold: consumo. La capa la marca la database; el tipo de tabla, el
-    #     prefijo del modelo (dim_, fct_, agg_, int_).
     gold:
+      +tags: ['gold']
       +materialized: table
-      #+database: "{{ env_var('DBT_GOLD_DB') }}"
-      +database: DEV_GOLD_DB
+      +database: "{{ env_var('DBT_GOLD_DB') }}"
+      #+database: DEV_GOLD_DB
       intermediate:
+        +access: private
+        +group: core
         +materialized: view
         +schema: intermediate
+
+        int_orders__enriched:
+          +group: core
+
+        int_events__pivoted_by_session:
+          +group: product
+
       core:
+        +group: core
+        +access: public
+        +tags: ['core']
         +schema: core
+        +meta:
+          owner: equipo-datos-core
+        +grants:
+          select: ['REPORTING_ROLE']
       marketing:
+        +group: marketing
+        +access: public
+        +tags: ['marketing']
         +schema: marketing
+        +meta:
+          owner: equipo-marketing-analytics
+        +grants:
+          select: ['REPORTING_ROLE']
       product:
+        +group: product
+        +access: public
+        +tags: ['product']
         +schema: product
+        +meta:
+          owner: equipo-producto
+        +grants:
+          select: ['REPORTING_ROLE']
 
 # =============================================================================
 # Seeds
@@ -85,12 +116,31 @@ models:
 # Van a Silver y no a Bronze: Bronze solo la escribe la herramienta de ingesta.
 seeds:
   curso_data_engineering:
-    #+database: "{{ env_var('DBT_SILVER_DB') }}"
-    +database: DEV_SILVER_DB
-    #+schema: seeds
+    +database: "{{ env_var('DBT_SILVER_DB') }}"
+    #+database: DEV_SILVER_DB
+    +schema: seeds
     country_codes:
       # Tipos explícitos para que dbt no los infiera del CSV
       +column_types:
         country_code: varchar(2)
         country_name: varchar(100)
         continent: varchar(50)
+
+# =============================================================================
+# Snapshots (día 5)
+# =============================================================================
+# Historial SCD2 en Silver. Nunca transient: un snapshot es la única copia de
+# la historia y no se puede reconstruir desde Bronze.
+snapshots:
+  curso_data_engineering:
+    +database: "{{ env_var('DBT_SILVER_DB') }}"
+    #+database: DEV_SILVER_DB 
+    +schema: snapshots
+    +transient: false
+
+vars:
+  low_stock_threshold: 10
+  budget_start_date: '2024-01-01'
+
+on-run-end: 
+  - "{{ log_run_summary(results) }}"

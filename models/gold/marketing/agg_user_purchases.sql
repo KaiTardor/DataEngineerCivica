@@ -6,7 +6,7 @@
 -- =============================================================================
 
 with users as (
-    select * from {{ ref('dim_users') }}
+    select * from {{ ref('dim_users', v=1) }}
 ),
 
 orders as (
